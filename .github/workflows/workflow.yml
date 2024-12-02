@@ -76,5 +76,5 @@ jobs:
 
       - name: Deploy Payment API to AKS
         run: |
-          kubectl apply -f ./payment/k8s/deployment-payment.yaml
-          kubectl apply -f ./payment/k8s/service-payment.yaml
+          kubectl apply -f ./k8s/deployment-payment.yaml
+          kubectl apply -f ./k8s/service-payment.yaml
