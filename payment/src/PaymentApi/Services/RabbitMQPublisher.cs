@@ -3,7 +3,7 @@ using System.Text;
 
 namespace PaymentApi.Services
 {
-    public class RabbitMQPublisher
+    public class RabbitMQPublisher : IRabbitMQPublisher
     {
         private readonly RabbitMQConnection _connection;
 

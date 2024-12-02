@@ -1,0 +1,16 @@
+# Base image for .NET SDK
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy the project file and restore dependencies for the main project
+COPY ["src/PaymentApi/PaymentApi.csproj", "PaymentApi/"]
+COPY ["src/PaymentTests/PaymentTests.csproj", "PaymentTests/"]
+RUN dotnet restore "PaymentTests/PaymentTests.csproj"
+
+# Copy the entire source code and build the tests
+COPY src/ ./src/
+WORKDIR "/src/PaymentTests"
+RUN dotnet build "PaymentTests.csproj" -c Release -o /app/build
+
+# Run the tests
+CMD ["dotnet", "test", "--logger:console;verbosity=detailed"]

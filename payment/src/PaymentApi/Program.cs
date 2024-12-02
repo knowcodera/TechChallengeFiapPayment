@@ -8,11 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<PaymentContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
-
 builder.Services.AddSingleton<RabbitMQConnection>();
-builder.Services.AddSingleton<RabbitMQPublisher>();
-builder.Services.AddSingleton<RabbitMQConsumer>();
+builder.Services.AddSingleton<IRabbitMQPublisher, RabbitMQPublisher>();
+
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

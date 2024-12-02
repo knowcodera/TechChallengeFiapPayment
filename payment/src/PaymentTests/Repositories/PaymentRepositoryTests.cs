@@ -19,7 +19,7 @@ namespace PaymentTests.Repositories
         public async Task CreatePaymentAsync_ShouldAddPaymentToDatabase()
         {
             // Arrange
-            var context = GetInMemoryDbContext(Guid.NewGuid().ToString()); // Nome único
+            var context = GetInMemoryDbContext(Guid.NewGuid().ToString());
             var repository = new PaymentRepository(context);
 
             var payment = new Payment
@@ -34,7 +34,7 @@ namespace PaymentTests.Repositories
             var payments = await repository.GetPaymentsAsync();
 
             // Assert
-            Assert.Single(payments); // Deve conter apenas um pagamento
+            Assert.Single(payments);
             Assert.Equal("Pending", payments.First().Status);
         }
 

@@ -1,27 +1,25 @@
-#See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
-
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER app
-WORKDIR /app
-EXPOSE 8480
-EXPOSE 8481
-
+# Base image for .NET SDK
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["src/API/PaymentWebhook.csproj", "PaymentWebhook/"]
-RUN dotnet restore "./PaymentWebhook/PaymentWebhook.csproj"
 
-WORKDIR "/src/PaymentWebhook"
-COPY . .
+# Copy the project file and restore dependencies
+COPY ["src/PaymentApi/PaymentApi.csproj", "PaymentApi/"]
+RUN dotnet restore "PaymentApi/PaymentApi.csproj"
 
-RUN dotnet build "./PaymentWebhook.csproj" -c $BUILD_CONFIGURATION -o /app/build
+# Copy only the source code for PaymentApi
+COPY src/PaymentApi/ ./PaymentApi/
+WORKDIR "/src/PaymentApi"
 
+# Build the main application
+RUN dotnet build "PaymentApi.csproj" -c Release -o /app/build
+
+# Publish the main application
 FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./PaymentWebhook.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "PaymentApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-FROM base AS final
+# Final runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "PaymentWebhook.dll"]
+EXPOSE 8580
+ENTRYPOINT ["dotnet", "PaymentApi.dll"]

@@ -5,15 +5,14 @@ using PaymentApi.Services;
 
 namespace PaymentApi.Controllers
 {
-
     [ApiController]
     [Route("v1/payment")]
     public class PaymentController : ControllerBase
     {
         private readonly IPaymentRepository _repository;
-        private readonly RabbitMQPublisher _publisher;
+        private readonly IRabbitMQPublisher _publisher;
 
-        public PaymentController(IPaymentRepository repository, RabbitMQPublisher publisher)
+        public PaymentController(IPaymentRepository repository, IRabbitMQPublisher publisher)
         {
             _repository = repository;
             _publisher = publisher;

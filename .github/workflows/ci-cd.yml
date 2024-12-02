@@ -1,0 +1,64 @@
+name: Payment CI/CD
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0
+
+    - name: Install dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run tests
+      run: dotnet test --no-build --configuration Release --collect:"XPlat Code Coverage"
+
+    - name: Upload Test Coverage
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-coverage
+        path: '**/TestResults/**/*.xml'
+
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Configure kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.25.0'
+
+    - name: Authenticate with AKS
+      uses: azure/aks-set-context@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        cluster-name: ${{ secrets.AKS_CLUSTER }}
+        resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
+
+    - name: Deploy Payment Service
+      run: |
+        kubectl apply -f k8s/deployment-payment.yaml
+        kubectl apply -f k8s/service-payment.yaml
