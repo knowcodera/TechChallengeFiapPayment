@@ -48,7 +48,7 @@ jobs:
       # Step 5: Prepare SonarCloud Analysis
       - name: SonarCloud Scan - Begin
         run: |
-          dotnet sonarscanner begin /k:"<your-project-key>" /o:"<your-sonarcloud-organization>" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" /d:sonar.verbose=true
+          dotnet sonarscanner begin /k:"knowcodera_TechChallengeFiapPayment" /o:"knowcodera" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" /d:sonar.verbose=true
 
       # Step 6: Clean and Build Payment API
       - name: Clean Payment API
