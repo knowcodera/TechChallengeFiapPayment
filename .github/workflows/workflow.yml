@@ -1,4 +1,4 @@
-name: Build and Deploy Payment API to Azure AKS
+name: Build, Analyze, and Deploy Payment API to Azure AKS
 
 on:
   push:
@@ -13,9 +13,10 @@ env:
   RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
   AKS_CLUSTER_NAME: ${{ secrets.AZURE_AKS_CLUSTER_NAME }}
   DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
 jobs:
-  build-and-deploy:
+  build-analyze-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -29,7 +30,15 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # Step 3: Clean and Build Payment API
+      # Step 3: Prepare SonarCloud Analysis
+      - name: SonarCloud Scan
+        uses: sonarsource/sonarcloud-github-action@v1
+        with:
+          projectKey: '<your-project-key>'
+          organization: '<your-sonarcloud-organization>'
+          token: ${{ env.SONAR_TOKEN }}
+
+      # Step 4: Clean and Build Payment API
       - name: Clean Payment API
         run: dotnet clean ./payment/src/PaymentApi/PaymentApi.csproj
 
@@ -39,15 +48,23 @@ jobs:
       - name: Build Payment API
         run: dotnet build ./payment/src/PaymentApi/PaymentApi.csproj --configuration Release --no-restore
 
-      # Step 4: Run Tests (Optional but Recommended)
-      - name: Run Unit Tests
-        run: dotnet test ./payment/src/PaymentTests/ --logger "console;verbosity=detailed"
+      # Step 5: Run Unit Tests with Code Coverage
+      - name: Run Unit Tests with Coverage
+        run: dotnet test ./payment/src/PaymentTests/ --collect:"Code Coverage" --logger "console;verbosity=detailed"
 
-      # Step 5: Setup Docker Buildx
+      # Step 6: Finalize SonarCloud Analysis
+      - name: Complete SonarCloud Analysis
+        uses: sonarsource/sonarcloud-github-action@v1
+        with:
+          projectKey: '<your-project-key>'
+          organization: '<your-sonarcloud-organization>'
+          token: ${{ env.SONAR_TOKEN }}
+
+      # Step 7: Setup Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Step 6: Login to Azure Container Registry (ACR) using Azure Credentials
+      # Step 8: Login to Azure Container Registry (ACR) using Azure Credentials
       - name: Log in to Azure Container Registry (ACR)
         uses: azure/docker-login@v1
         with:
@@ -55,13 +72,13 @@ jobs:
           username: ${{ secrets.AZURE_CLIENT_ID }}
           password: ${{ secrets.AZURE_CLIENT_SECRET }}
 
-      # Step 7: Build and Push Docker image for Payment API
+      # Step 9: Build and Push Docker image for Payment API
       - name: Build and Push Docker Image
         run: |
           docker build -t ${{ env.ACR_NAME }}.azurecr.io/payment:latest ./payment
           docker push ${{ env.ACR_NAME }}.azurecr.io/payment:latest
 
-      # Step 8: Deploy to AKS
+      # Step 10: Deploy to AKS
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
