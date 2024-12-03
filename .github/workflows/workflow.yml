@@ -31,6 +31,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # Ensure Java 17 is being used
+      - name: Verify Java Version
+        run: java -version
+
       # Step 3: Set up .NET Core
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v2
@@ -39,14 +43,8 @@ jobs:
 
       # Step 4: Prepare SonarCloud Analysis
       - name: SonarCloud Scan - Prepare
-        uses: sonarsource/sonarcloud-github-action@v1
-        with:
-          projectKey: '<your-project-key>'
-          organization: '<your-sonarcloud-organization>'
-          token: ${{ secrets.SONAR_TOKEN }}
-          extraProperties: |
-            sonar.verbose=true
-            sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
+        run: |
+          dotnet sonarscanner begin /k:"<your-project-key>" /o:"<your-sonarcloud-organization>" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" /d:sonar.verbose=true
 
       # Step 5: Clean and Build Payment API
       - name: Clean Payment API
@@ -60,17 +58,11 @@ jobs:
 
       # Step 6: Run Unit Tests with Code Coverage
       - name: Run Unit Tests with Coverage
-        run: |
-          dotnet test ./payment/src/PaymentTests/ --logger "trx" --results-directory ./TestResults/ --collect:"Code Coverage"
-          reportgenerator -reports:**/coverage.opencover.xml -targetdir:TestResults/ -reporttypes:Html
+        run: dotnet test ./payment/src/PaymentTests/ --collect:"Code Coverage"
 
       # Step 7: Finalize SonarCloud Analysis
-      - name: SonarCloud Scan - Complete
-        uses: sonarsource/sonarcloud-github-action@v1
-        with:
-          projectKey: '<your-project-key>'
-          organization: '<your-sonarcloud-organization>'
-          token: ${{ secrets.SONAR_TOKEN }}
+      - name: SonarCloud Scan - Finalize
+        run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
 
       # Step 8: Setup Docker Buildx
       - name: Set up Docker Buildx
