@@ -45,12 +45,8 @@ jobs:
       - name: Install dotnet-sonarscanner
         run: dotnet tool install --global dotnet-sonarscanner
 
-      # Ensure SonarScanner is available
-      - name: Verify SonarScanner Installation
-        run: dotnet sonarscanner --version
-
       # Step 5: Prepare SonarCloud Analysis
-      - name: SonarCloud Scan - Prepare
+      - name: SonarCloud Scan - Begin
         run: |
           dotnet sonarscanner begin /k:"<your-project-key>" /o:"<your-sonarcloud-organization>" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" /d:sonar.verbose=true
 
@@ -69,7 +65,7 @@ jobs:
         run: dotnet test ./payment/src/PaymentTests/ --collect:"Code Coverage"
 
       # Step 8: Finalize SonarCloud Analysis
-      - name: SonarCloud Scan - Finalize
+      - name: SonarCloud Scan - End
         run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
 
       # Step 9: Setup Docker Buildx
