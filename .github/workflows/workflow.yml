@@ -24,21 +24,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Set up .NET Core
+      # Step 2: Set up Java 17 for SonarCloud
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # Step 3: Set up .NET Core
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v2
         with:
           dotnet-version: '8.0.x'
 
-      # Step 3: Prepare SonarCloud Analysis
-      - name: SonarCloud Scan
+      # Step 4: Prepare SonarCloud Analysis
+      - name: SonarCloud Scan - Prepare
         uses: sonarsource/sonarcloud-github-action@v1
         with:
           projectKey: '<your-project-key>'
           organization: '<your-sonarcloud-organization>'
-          token: ${{ env.SONAR_TOKEN }}
+          token: ${{ secrets.SONAR_TOKEN }}
+          extraProperties: |
+            sonar.verbose=true
+            sonar.cs.opencover.reportsPaths=**/coverage.opencover.xml
 
-      # Step 4: Clean and Build Payment API
+      # Step 5: Clean and Build Payment API
       - name: Clean Payment API
         run: dotnet clean ./payment/src/PaymentApi/PaymentApi.csproj
 
@@ -48,23 +58,25 @@ jobs:
       - name: Build Payment API
         run: dotnet build ./payment/src/PaymentApi/PaymentApi.csproj --configuration Release --no-restore
 
-      # Step 5: Run Unit Tests with Code Coverage
+      # Step 6: Run Unit Tests with Code Coverage
       - name: Run Unit Tests with Coverage
-        run: dotnet test ./payment/src/PaymentTests/ --collect:"Code Coverage" --logger "console;verbosity=detailed"
+        run: |
+          dotnet test ./payment/src/PaymentTests/ --logger "trx" --results-directory ./TestResults/ --collect:"Code Coverage"
+          reportgenerator -reports:**/coverage.opencover.xml -targetdir:TestResults/ -reporttypes:Html
 
-      # Step 6: Finalize SonarCloud Analysis
-      - name: Complete SonarCloud Analysis
+      # Step 7: Finalize SonarCloud Analysis
+      - name: SonarCloud Scan - Complete
         uses: sonarsource/sonarcloud-github-action@v1
         with:
           projectKey: '<your-project-key>'
           organization: '<your-sonarcloud-organization>'
-          token: ${{ env.SONAR_TOKEN }}
+          token: ${{ secrets.SONAR_TOKEN }}
 
-      # Step 7: Setup Docker Buildx
+      # Step 8: Setup Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Step 8: Login to Azure Container Registry (ACR) using Azure Credentials
+      # Step 9: Login to Azure Container Registry (ACR) using Azure Credentials
       - name: Log in to Azure Container Registry (ACR)
         uses: azure/docker-login@v1
         with:
@@ -72,13 +84,13 @@ jobs:
           username: ${{ secrets.AZURE_CLIENT_ID }}
           password: ${{ secrets.AZURE_CLIENT_SECRET }}
 
-      # Step 9: Build and Push Docker image for Payment API
+      # Step 10: Build and Push Docker image for Payment API
       - name: Build and Push Docker Image
         run: |
           docker build -t ${{ env.ACR_NAME }}.azurecr.io/payment:latest ./payment
           docker push ${{ env.ACR_NAME }}.azurecr.io/payment:latest
 
-      # Step 10: Deploy to AKS
+      # Step 11: Deploy to AKS
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
