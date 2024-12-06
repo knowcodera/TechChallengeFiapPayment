@@ -52,6 +52,7 @@ O pipeline CI/CD está configurado no GitHub Actions:
 - Realiza o build e testes automatizados.
 - Publica a imagem Docker no Azure Container Registry.
 - Faz o deploy no Azure Kubernetes Service (AKS).
+- Faz o teste de cobertua via sonarcloud - SonarQube  de 70%.
 
 ### **Workflow Configurado**
 Confira o workflow em:
