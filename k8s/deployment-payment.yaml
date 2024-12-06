@@ -12,13 +12,10 @@ spec:
       labels:
         app: payment-api
     spec:
+      imagePullSecrets:
+      - name: acr-secret
       containers:
       - name: payment-api
-        image: knowcodera/techchallengefiappayment:latest
+        image: mycontainerregistrytechchallenge.azurecr.io/payment:latest
         ports:
         - containerPort: 8480
-        envFrom:
-        - configMapRef:
-            name: payment-api-config
-        - secretRef:
-            name: payment-api-secret
